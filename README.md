@@ -4,7 +4,7 @@ Browser Extensions (tested on Google Chrome)
 
 #define UI Under Implementation
 
-This extension monitor your chrome for any malicious act (commited by other Extensions). More specifically, 
+This extension monitors your browser for any malicious act (commited by other extensions). More specifically, 
 this extension checks:
 
 1) Whether any extension is changing content of security related headers of web requests
