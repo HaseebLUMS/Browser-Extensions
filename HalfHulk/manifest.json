@@ -1,0 +1,11 @@
+{
+   "name": "HalfHulk",
+   "description": "Detects malicious behavior of extensions",
+   "background": {
+      "scripts": [ "background.js" ]
+   },
+
+   "permissions": [ "<all_urls>", "history", "management", "tabs", "webNavigation", "webRequest" ],
+   "manifest_version": 2,
+   "version": "1.0"
+}
