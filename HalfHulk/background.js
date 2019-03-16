@@ -5,12 +5,8 @@
 //Add Listner to windows
 // format of http-headers: [{key1:val1}, {...}, {...}, ...]
 
+
 console.log("Doing...")
-toListen          = [[chrome.tabs.onRemoved,"chrome.tabs.onRemoved"],
-			[chrome.tabs.onReplaced,"chrome.tabs.onReplaced"],
-			[chrome.management.onInstalled, "chrome.management.onInstalled"],
-			[chrome.management.onUninstalled, "chrome.management.onUninstalled"],
-			[chrome.history.onVisitRemoved, "chrome.history.onVisitRemoved"]]
 headers_store     = {}	//{requestId1:[http-headers1], requestId2:[http-headers2], ...}
 parameters_store  = {} //{requestId1:[url-parameters], requestId2:[url-parameters], ...}
 _alert  		  = "\n\nALERT\n"
@@ -18,19 +14,23 @@ _hdr_rm 		  = "----------Headers Removed"
 _hdr_ad 		  = "++++++++++ New Headers Added"
 _hdr_ch			  = "!=!=!=!=!=!=!= Headers Changed"
 _hdr_hp			  = ":) :) :) :) :)HAPPY HAPPY Headers"
+_prm_ch			  = "!=!=!=!=!=!=!= Parameters Changed"
 _info   		  = "***********(i)"
+toListen          = [[chrome.tabs.onRemoved,"chrome.tabs.onRemoved"],
+					[chrome.tabs.onReplaced,"chrome.tabs.onReplaced"],
+					[chrome.management.onInstalled, "chrome.management.onInstalled"],
+					[chrome.management.onUninstalled, "chrome.management.onUninstalled"],
+					[chrome.history.onVisitRemoved, "chrome.history.onVisitRemoved"]
+					]
 
 
 
-
-
+// A utility function, takes two headers and checks for any differences
 let validateHeaders = function(stored_headers, new_headers){
 	if (stored_headers.length != new_headers.length){
 		if (stored_headers.length > new_headers.length){console.log(_alert, _hdr_rm);}
 		else {console.log(_alert, _hdr_ad);}
 	}
-	
-
 	else if(JSON.stringify(stored_headers) != JSON.stringify(new_headers)){//code performance alert
 		//Identifying Which Header Changed
 		for(i = 0; i< stored_headers.length; i++){
@@ -43,27 +43,48 @@ let validateHeaders = function(stored_headers, new_headers){
 			}
 		}
 	}
-
-
-	else console.log(_alert, _hdr_hp)
+	else console.log( _hdr_hp);
 }
 
 
-let listener = function(){
-	console.log('triggered', arguments)
-};
-
+// Called when headers are received, and stores them for future references
 let headersReceived = function(){
-	console.log('headersReceived', arguments)
+	//console.log('headersReceived', arguments)
 	headers_store[arguments[0].requestId] = arguments[0].responseHeaders
 };
 
+
+//Called when a web request is fully processed, it then checks the headers against previously stored headers
 let completed = function(){
-	console.log('completed', arguments)
+	//console.log('completed', arguments)
 	if(headers_store[arguments[0].requestId]){
 		validateHeaders(headers_store[arguments[0].requestId], arguments[0].responseHeaders)
 	}
 };
+
+
+//Stores URL before the request is supplied to any extensions
+let beforeSendHeaders = function(){
+	//console.log('beforeSendHeaders')
+	parameters_store[arguments[0].requestId] = arguments[0].url
+};
+
+
+//Called when request is processed by extensions, then it checks the URL against stored URL
+let sendHeaders = function(){
+	//console.log('sendHeaders')
+	if(parameters_store[arguments[0].requestId] != arguments[0].url){
+		console.log(_alert, _prm_ch, "old: ", parameters_store[arguments[0].requestId], " modified: ", arguments[0].url)
+	}
+};
+
+
+// Called when any of the event listed in toListen is triggered
+let listener = function(){
+	console.log('triggered', arguments)
+};
+
+
 
 var main = function(){
 	for (i = 0; i < toListen.length; i++){
@@ -73,4 +94,21 @@ var main = function(){
 
 	chrome.webRequest.onHeadersReceived.addListener(headersReceived, {urls: ['<all_urls>']}, ['responseHeaders']);
 	chrome.webRequest.onCompleted.addListener(completed, {urls: ['<all_urls>']}, ['responseHeaders']);
+	chrome.webRequest.onBeforeSendHeaders.addListener(beforeSendHeaders, {urls: ['<all_urls>']});
+	chrome.webRequest.onSendHeaders.addListener(sendHeaders, {urls: ['<all_urls>']});
 }();
+
+
+//Design Decision: 
+//1) Make a generic listener function for all events
+//and take action accordingly (by if else statements)
+//2) Make a speific funcion for each event
+// Goal: Print critical info of each event; the critical info varies for each event.
+//
+// Going with 1 will incur a performance overhead as it will be 
+// exessivley used funtion and many if else statements will be
+// computed for taking any specific action.
+// Going with 2 will avoid this overhead and for each event a specific function 
+// will be called.
+
+//Muhammad Haseeb
