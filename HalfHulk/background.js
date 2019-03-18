@@ -9,19 +9,18 @@
 console.log("Doing...")
 headers_store     = {}	//{requestId1:[http-headers1], requestId2:[http-headers2], ...}
 parameters_store  = {} //{requestId1:[url-parameters], requestId2:[url-parameters], ...}
-_alert  		  = "\n\nALERT\n"
-_hdr_rm 		  = "----------Headers Removed"
-_hdr_ad 		  = "++++++++++ New Headers Added"
-_hdr_ch			  = "!=!=!=!=!=!=!= Headers Changed"
-_hdr_hp			  = ":) :) :) :) :)HAPPY HAPPY Headers"
-_prm_ch			  = "!=!=!=!=!=!=!= Parameters Changed"
-_info   		  = "***********(i)"
-toListen          = [[chrome.tabs.onRemoved,"chrome.tabs.onRemoved"],
-					[chrome.tabs.onReplaced,"chrome.tabs.onReplaced"],
-					[chrome.management.onInstalled, "chrome.management.onInstalled"],
-					[chrome.management.onUninstalled, "chrome.management.onUninstalled"],
-					[chrome.history.onVisitRemoved, "chrome.history.onVisitRemoved"]
-					]
+_alert  	  = "\n\nALERT\n"
+_hdr_rm 	  = "----------Headers Removed"
+_hdr_ad 	  = "++++++++++ New Headers Added"
+_hdr_ch		  = "!=!=!=!=!=!=!= Headers Changed"
+_hdr_hp		  = ":) :) :) :) :)HAPPY HAPPY Headers"
+_prm_ch		  = "!=!=!=!=!=!=!= Parameters Changed"
+_info   	  = "***********(i)"
+toListen    	  = [[chrome.tabs.onRemoved,"chrome.tabs.onRemoved"],
+		    [chrome.tabs.onReplaced,"chrome.tabs.onReplaced"],
+		    [chrome.management.onInstalled, "chrome.management.onInstalled"],
+		    [chrome.management.onUninstalled, "chrome.management.onUninstalled"],
+		    [chrome.history.onVisitRemoved, "chrome.history.onVisitRemoved"]]
 
 
 
