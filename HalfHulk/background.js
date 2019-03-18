@@ -7,6 +7,7 @@
 
 
 console.log("Doing...")
+ext_pages 	  = []
 headers_store     = {}	//{requestId1:[http-headers1], requestId2:[http-headers2], ...}
 parameters_store  = {} //{requestId1:[url-parameters], requestId2:[url-parameters], ...}
 _alert  	  = "\n\nALERT\n"
@@ -16,8 +17,7 @@ _hdr_ch		  = "!=!=!=!=!=!=!= Headers Changed"
 _hdr_hp		  = ":) :) :) :) :)HAPPY HAPPY Headers"
 _prm_ch		  = "!=!=!=!=!=!=!= Parameters Changed"
 _info   	  = "***********(i)"
-toListen    	  = [[chrome.tabs.onRemoved,"chrome.tabs.onRemoved"],
-		    [chrome.tabs.onReplaced,"chrome.tabs.onReplaced"],
+toListen          = [[chrome.tabs.onReplaced,"chrome.tabs.onReplaced"],
 		    [chrome.management.onInstalled, "chrome.management.onInstalled"],
 		    [chrome.management.onUninstalled, "chrome.management.onUninstalled"],
 		    [chrome.history.onVisitRemoved, "chrome.history.onVisitRemoved"]]
@@ -84,6 +84,36 @@ let listener = function(){
 };
 
 
+//checks if extension management page is open or not, if not then it opens one
+//it is for checking mal behavior of extensions; whether they are forcing this
+//specific page to be closed
+let addExtPage = function(tabs){
+	console.log("All Tabs")
+	console.log(tabs)
+	ext_page_present = false
+	for(i = 0; i<= tabs.length; i++){
+		if(i == tabs.length){
+			chrome.tabs.create({url: 'chrome://extensions/'})
+			console.log("navigated chrome://extensions page")
+		}
+
+		else if(tabs[i].url == 'chrome://extensions/'){
+			console.log("Already there (chrome://extensions)")
+			break
+		}
+	}
+
+	//Now Adding listener to ext pages; whether any one is trying to close 'em.
+	chrome.tabs.getAllInWindow(function(newTabs){
+		for(j = 0; j < newTabs.length; j++){
+			if(newTabs[i].url = 'chrome://extensions/'){
+				ext_pages.push(newTabs[i].id)
+			}
+		}
+	})
+
+}
+
 
 var main = function(){
 	for (i = 0; i < toListen.length; i++){
@@ -91,10 +121,27 @@ var main = function(){
 		console.log('Listening', toListen[i][1], "...");
 	}
 
+	chrome.tabs.getAllInWindow(addExtPage);
 	chrome.webRequest.onHeadersReceived.addListener(headersReceived, {urls: ['<all_urls>']}, ['responseHeaders']);
 	chrome.webRequest.onCompleted.addListener(completed, {urls: ['<all_urls>']}, ['responseHeaders']);
 	chrome.webRequest.onBeforeSendHeaders.addListener(beforeSendHeaders, {urls: ['<all_urls>']});
 	chrome.webRequest.onSendHeaders.addListener(sendHeaders, {urls: ['<all_urls>']});
+
+
+	chrome.tabs.onRemoved.addListener((id) => {
+		if (ext_pages.includes(id)){
+			console.log(_alert, "chrome://extensions page being forcefully removed.")
+		}
+	});
+
+
+	//not common | need to see this more | not clear
+	chrome.tabs.onReplaced.addListener((new_id, old_id) => {
+		if(ext_pages.includes(old_id)){
+			console.log(_alert, "chrome://extensions page being forcefully replaced.")
+		}
+	});
+
 }();
 
 
