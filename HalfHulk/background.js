@@ -7,20 +7,18 @@
 
 
 console.log("Doing...")
-ext_pages 	  = []
-headers_store     = {}	//{requestId1:[http-headers1], requestId2:[http-headers2], ...}
+sws_info		  = [] // sws are all software in this context, {extensions, apps, themes}
+ext_pages 		  = []
+headers_store     = {} //{requestId1:[http-headers1], requestId2:[http-headers2], ...}
 parameters_store  = {} //{requestId1:[url-parameters], requestId2:[url-parameters], ...}
-_alert  	  = "\n\nALERT\n"
-_hdr_rm 	  = "----------Headers Removed"
-_hdr_ad 	  = "++++++++++ New Headers Added"
-_hdr_ch		  = "!=!=!=!=!=!=!= Headers Changed"
-_hdr_hp		  = ":) :) :) :) :)HAPPY HAPPY Headers"
-_prm_ch		  = "!=!=!=!=!=!=!= Parameters Changed"
-_info   	  = "***********(i)"
-toListen          = [[chrome.tabs.onReplaced,"chrome.tabs.onReplaced"],
-		    [chrome.management.onInstalled, "chrome.management.onInstalled"],
-		    [chrome.management.onUninstalled, "chrome.management.onUninstalled"],
-		    [chrome.history.onVisitRemoved, "chrome.history.onVisitRemoved"]]
+_alert  		  = "\n\nALERT\n"
+_hdr_rm 		  = "----------Headers Removed"
+_hdr_ad 		  = "++++++++++ New Headers Added"
+_hdr_ch			  = "!=!=!=!=!=!=!= Headers Changed"
+_hdr_hp			  = ":) :) :) :) :)HAPPY HAPPY Headers"
+_prm_ch			  = "!=!=!=!=!=!=!= Parameters Changed"
+_info   		  = "***********(i)"
+
 
 
 
@@ -104,22 +102,25 @@ let addExtPage = function(tabs){
 	}
 
 	//Now Adding listener to ext pages; whether any one is trying to close 'em.
-	chrome.tabs.getAllInWindow(function(newTabs){
+	chrome.tabs.getAllInWindow((newTabs) =>{
 		for(j = 0; j < newTabs.length; j++){
-			if(newTabs[i].url = 'chrome://extensions/'){
-				ext_pages.push(newTabs[i].id)
+			if(newTabs[j].url == 'chrome://extensions/'){
+				ext_pages.push(newTabs[j].id)
 			}
 		}
-	})
+	});
 
 }
 
 
 var main = function(){
-	for (i = 0; i < toListen.length; i++){
-		toListen[i][0].addListener(listener);
-		console.log('Listening', toListen[i][1], "...");
-	}
+
+	//Storing all installed SWs in sws_info (a global var)
+	chrome.management.getAll(installedSWs =>{
+		installedSWs.forEach(sw => {sws_info.push(sw)})
+		console.log(sws_info)
+	});
+
 
 	chrome.tabs.getAllInWindow(addExtPage);
 	chrome.webRequest.onHeadersReceived.addListener(headersReceived, {urls: ['<all_urls>']}, ['responseHeaders']);
@@ -128,6 +129,7 @@ var main = function(){
 	chrome.webRequest.onSendHeaders.addListener(sendHeaders, {urls: ['<all_urls>']});
 
 
+	//Checking if any extension is avoiding chrome://extensions page
 	chrome.tabs.onRemoved.addListener((id) => {
 		if (ext_pages.includes(id)){
 			console.log(_alert, "chrome://extensions page being forcefully removed.")
@@ -142,6 +144,31 @@ var main = function(){
 		}
 	});
 
+
+	//checking whether any extension is installing something
+	chrome.management.onInstalled.addListener(info => {
+		console.log(_alert, "A new extension/app/theme installed, name: " +
+		info.name, " description: ", info.description)
+		sws_info.push(info) //A new SW got installed, so storing it in sws_info
+	});
+
+
+	//checking whether any extension is un-installing something
+	chrome.management.onUninstalled.addListener(rm_id => {
+		sws_info.forEach(sws => {
+			if(sws.id == rm_id){
+				console.log(_alert, "An extension/app/theme got Un-installed," +
+				"name:, ", sws.name,  "description: ", sws.description);
+			}
+		});
+	});
+
+
+	//checking whether any extension is manipulating history
+	chrome.history.onVisitRemoved.addListener(rm => {
+		console.log(_alert, "History is being removed.", rm)
+	})
+
 }();
 
 
@@ -154,7 +181,7 @@ var main = function(){
 // Going with 1 will incur a performance overhead as it will be 
 // exessivley used funtion and many if else statements will be
 // computed for taking any specific action.
-// Going with 2 will avoid this overhead and for each event a specific function 
+// Going with 2 will avoid this overhead and for each event a specific callback function 
 // will be called.
 
 //Muhammad Haseeb
