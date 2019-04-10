@@ -2,8 +2,6 @@
 Browser Extensions (tested on Google Chrome)
 
 
-#define UI Under Implementation
-
 This extension monitors your browser for any malicious act (commited by other extensions). More specifically, 
 this extension checks whether any extension is:
 
